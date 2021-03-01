@@ -3,72 +3,54 @@
 #include <stdlib.h>
 #include <time.h>
 #include <pthread.h>
-void *refresh(void *ptr){
+int x,y;
+pthread_mutex_t key_mutex = PTHREAD_MUTEX_INITIALIZER;
+char32_t key;
+void *render(void *ptr){
 	struct notcurses *context = ptr;
 	struct ncplane *stdplane= notcurses_stdplane(context);
-	struct timespec remaining, request = {0,16666670};
-	//struct timespec remaining, request = {1,0};
+	struct timespec remaining, renderspeed = {0,16666670};
 	while(1){
 		notcurses_render(context);
-		nanosleep(&request, &remaining);
+		nanosleep(&renderspeed, &remaining);
 	}
 }
-void *animate(void *ptr){
+void *input(void *ptr){
 	struct notcurses *context = ptr;
-	struct timespec remaining, request = {0,10000000};
-	int x,y;
-	struct ncplane *stdplane= notcurses_stdplane(context);
-	notcurses_stddim_yx(context,&y,&x);
+	ncinput ni;
+	char32_t localkey;
 	while(1){
-		for(int n=0;n<y/2;n++){
-			for(int i=n;i<x-n;i++){
-				ncplane_putchar_yx(stdplane,n,i,'@');
-				nanosleep(&request, &remaining);
-			}
-			for(int j=n;j<y-n;j++){
-				ncplane_putchar_yx(stdplane,j,x-1-n,'@');
-				nanosleep(&request, &remaining);
-			}
-			for(int i=x-n-1;i>=n;i--){
-				ncplane_putchar_yx(stdplane,y-n-1,i,'@');
-				nanosleep(&request, &remaining);
-			}
-			for(int j=y-n-1;j>=n;j--){
-				ncplane_putchar_yx(stdplane,j,n,'@');
-				nanosleep(&request, &remaining);
-			}
-		}
-		for(int n=0;n<y/2;n++){
-			for(int i=n;i<x-n;i++){
-				ncplane_putchar_yx(stdplane,n,i,' ');
-				nanosleep(&request, &remaining);
-			}
-			for(int j=n;j<y-n;j++){
-				ncplane_putchar_yx(stdplane,j,x-1-n,' ');
-				nanosleep(&request, &remaining);
-			}
-			for(int i=x-n-1;i>=n;i--){
-				ncplane_putchar_yx(stdplane,y-n-1,i,' ');
-				nanosleep(&request, &remaining);
-			}
-			for(int j=y-n-1;j>=n;j--){
-				ncplane_putchar_yx(stdplane,j,n,' ');
-				nanosleep(&request, &remaining);
-			}
-		}
+		localkey = notcurses_getc_blocking(ptr, &ni);
+		if(localkey=='q')return NULL;
+		pthread_mutex_lock(&key_mutex);
+		key=localkey;
+		pthread_mutex_unlock(&key_mutex);
 	}
-	ncplane_printf(stdplane,"Done.");
-	request.tv_sec=5;
-	request.tv_nsec=0;
-	nanosleep(&request, &remaining);
-	return NULL;
+}
+void *simulate(void *ptr){
+	struct timespec remaining, gamespeed={0,50000000};
+	char32_t localkey;
+	struct notcurses *context = ptr;
+	struct ncplane *stdplane= notcurses_stdplane(context);
+	while(1){
+		pthread_mutex_lock(&key_mutex);
+		localkey=key;
+		pthread_mutex_unlock(&key_mutex);
+		ncplane_erase(stdplane);
+		ncplane_cursor_move_yx(stdplane,0,0);
+		ncplane_printf(stdplane,"%c",key);
+		nanosleep(&gamespeed, &remaining);
+	}
 }
 int main(){
 	struct notcurses *context= notcurses_core_init(NULL,stdin);
-	pthread_t animation_thread, refresh_thread;
-	pthread_create(&animation_thread, NULL, animate, context);
-	pthread_create(&refresh_thread, NULL, refresh, context);
-	pthread_join(animation_thread, NULL);
+	struct ncplane *stdplane= notcurses_stdplane(context);
+	notcurses_stddim_yx(context,&y,&x);
+	pthread_t input_thread,simulation_thread, render_thread;
+	pthread_create(&simulation_thread, NULL, simulate, context);
+	pthread_create(&input_thread, NULL, input, context);
+	pthread_create(&render_thread, NULL, render, context);
+	pthread_join(input_thread, NULL);
 	notcurses_stop(context);
 	return 0;
 }
