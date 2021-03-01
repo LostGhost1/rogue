@@ -77,7 +77,7 @@ void init(){
 		field[i]=calloc(sizeof(char),y);
 	for(int i=0;i<x;i++)
 		for(int j=0;j<y;j++)
-			field[i][j]='a'+rand()%26;
+			field[i][j]='.';
 	player_x=0;
 	player_y=0;
 }
