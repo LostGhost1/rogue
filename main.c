@@ -54,8 +54,8 @@ void *input(void *ptr){
 		if(key=='q')return NULL;
 		if(key=='w')if(player_y!=0)player_y-=1;
 		if(key=='a')if(player_x!=0)player_x-=1;
-		if(key=='s')if(player_y!=y)player_y+=1;
-		if(key=='d')if(player_x!=x)player_x+=1;
+		if(key=='s')if(player_y!=y-1)player_y+=1;
+		if(key=='d')if(player_x!=x-1)player_x+=1;
 	}
 }
 void *simulate(void *ptr){
@@ -66,7 +66,7 @@ void *simulate(void *ptr){
 		pthread_mutex_lock(&field_mutex);
 		for(int i=0;i<x;i++)
 			for(int j=0;j<y;j++)
-				if(rand()%100==1)field[i][j]='a'+rand()%26;
+				if(rand()%1000==1)field[i][j]='a'+rand()%26;
 		pthread_mutex_unlock(&field_mutex);
 		nanosleep(&gamespeed, &remaining);
 	}
