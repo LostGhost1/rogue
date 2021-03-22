@@ -1,0 +1,16 @@
+//extern CC_List *thread_list;
+//CC_ListIter i;
+//			cc_list_iter_init(&i,thread_list);
+//			while(i.next!=NULL){
+//				pthread_t *current;
+//				cc_list_iter_next(&i,(void*)(&current));
+//				if((*current)==(*self))continue;
+//				pthread_join(*current,NULL);
+//			}
+			//	cc_list_new(&thread_list);
+//	cc_list_add(thread_list,&input_thread);
+//	cc_list_add(thread_list,&render_thread);
+//	cc_list_add(thread_list,&simulation_thread);
+//	cc_list_add(thread_list,&prepare_frame_thread);
+
+
